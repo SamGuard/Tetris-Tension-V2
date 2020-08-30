@@ -3,8 +3,6 @@ const express = require('express');//Used for incoming http requests
 const app = express();
 const bodyparse = require("body-parser");
 
-const rooms = require('./rooms');
-
 app.use(bodyparse());
 app.use(express.static("public"));
 
@@ -21,7 +19,6 @@ app.use("/", function(req, res, next){
         res.send(data);
     });
 });
-app.use("/rooms", rooms);
 
 app.use(function (req, res, next) {
     res.send(errorRespsonse());
