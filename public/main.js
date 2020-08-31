@@ -1,87 +1,138 @@
-let socket; //defined globally so can be accessed in jQuery events
-let roomCode = "";
-function createRoom(){
-    let data = JSON.stringify({
-        purp: "createroom",
-        data: {},
-        time: Date.now()
-    });
-    socket.send(data);
+function makeid(length) {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
 }
 
-function joinRoom(){
-    let data = JSON.stringify({
-        purp: "joinroom",
-        data: {roomCode: roomCode},
-        time: Date.now()
-    });
-    socket.send(data);
-}
 
-function connectionHandler(){
-    let IP = "ws://192.168.0.28:3000";
-    socket = new WebSocket(IP);
+class ConnectionHandler {
+    constructor() {
+        this.isHost = false;
+        this.gameRunning = false;
+        this.roomCode = "";
+        this.game;
+        this.IP = "ws://192.168.0.28:3000";
+        this.socket = new WebSocket(this.IP);
+        this.id = makeid(6);
+        console.log("Your id is: " + this.id);
+    }
 
-    socket.onopen = function (e) {
-        console.log("[open] Connection established");
-    };
+    createRoom() {
+        let data = JSON.stringify({
+            purp: "createroom",
+            data: {},
+            time: Date.now(),
+            id: this.id
+        });
+        this.socket.send(data);
+    }
 
-    socket.onmessage = function (event) {
-        console.log(`[message] Data received from server: ${event.data}`);
-        let data = JSON.parse(event.data);
-
-        if(data.purp == "createroom"){
-            roomCode = data.data.roomCode;   
-        }else if(data.purp == "joinroom"){
-            if(roomCode == "-1"){
-                console.log("Error joining room");
-            }else{
-                console.log("Go");
-            }
-
-        }else if(data.purp == "start"){
-            console.log("Go");
-        }
-
-    };
+    joinRoom() {
+        let data = JSON.stringify({
+            purp: "joinroom",
+            data: { roomCode: this.roomCode },
+            time: Date.now(),
+            id: this.id
+        });
+        this.socket.send(data);
+    }
 
 
-    socket.onclose = function (event) {
-        if (event.wasClean) {
-            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+
+    startGame() {
+        console.log("Start game");
+        $('#createGamePage').hide();
+        $('#homePage').hide();
+
+        $('#gamePage').show();
+        this.gameRunning = true;
+
+        this.game = new Game(this.isHost, this.socket);
+        console.log("Game running, isHost: " + this.isHost);
+        gameUpdateInterval = setInterval(function(){
+            conHandler.game.update();
+        }, 100);
+
+    }
+
+};
+
+let conHandler = new ConnectionHandler();
+let gameUpdateInterval = null;
+conHandler.socket.onopen = function (e) {
+    console.log("[open] Connection established");
+};
+
+conHandler.socket.onmessage = function (event) {
+    console.log(`[message] Data received from server: ${event.data}`);
+    let data = JSON.parse(event.data);
+
+    if(data.id != conHandler.id){
+        console.log("Invalid ID: " + data.id);
+        return;
+    }
+
+    if (data.purp == "createroom") {
+        conHandler.roomCode = data.data.roomCode;
+        console.log(conHandler.roomCode);
+        $('#createGamePin').html(`<b>${conHandler.roomCode}</b><br>`);
+    } else if (data.purp == "joinroom") {
+        if (data.data.roomCode == -1) {
+            console.log("Error joining room");
         } else {
-            // e.g. server process killed or network down
-            // event.code is usually 1006 in this case
-            console.log('[close] Connection died');
+            conHandler.roomCode = data.data.roomCode;
+            conHandler.isHost = false;
+            conHandler.startGame();
         }
-    };
 
-    socket.onerror = function (error) {
-        console.log(`[error] ${error.message}`);
-    };
-}
+    } else if (data.purp == "start") {
+        conHandler.isHost = true;
+        conHandler.startGame();
+    }
 
-connectionHandler();
+};
+
+
+conHandler.socket.onclose = function (event) {
+    if (event.wasClean) {
+        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+    } else {
+        console.log('[close] Connection died');
+    }
+};
+
+conHandler.socket.onerror = function (error) {
+    console.log(`[error] ${error.message}`);
+};
 
 $(document).ready(function () {
 
     $('#homePage').show();
     $('#createGamePage').hide();
+    $('#gamePage').hide();
 
-    $('#joinGameButton').click(function(){
-        roomCode = $('#codeInput').val();
-        joinRoom();
+    $('#joinGameButton').click(function () {
+        conHandler.roomCode = $('#codeInput').val();
+        conHandler.joinRoom();
     });
 
-    $('#createGameButton').click(function(){
+    $('#createGameButton').click(function () {
         $('#homePage').hide();
+        $('#gamePage').hide();
+
         $('#createGamePage').show();
-        createRoom();
+        conHandler.createRoom();
     });
 
     $('#createBackButton').click(function () {
-        $('#homePage').show();
         $('#createGamePage').hide();
+        $('#gamePage').hide();
+
+        $('#homePage').show();
     });
 
 });

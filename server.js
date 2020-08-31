@@ -1,8 +1,9 @@
 const http = require('http');//Loading http package so i can use a http server
 const webSocketServer = require("websocket").server;
 const app = require("./app");//Getting app.js in the current folder which holds all the routes the user can take
-const ids = require("short-id");
+const shortID = require("short-id");
 const { exception } = require('console');
+const { finished } = require('stream');
 
 const port = process.env.PORT || 3000;//This means to use port 3000 unless process.env.PORT is set as this variable is set when deployed to heroku
 
@@ -14,75 +15,117 @@ console.log("listening on port " + port);
 
 
 //WebSocketServer
+class ID {
+    constructor(ip, id) {
+        this.ip = ip;
+        this.id = id;
+    }
+};
 
 class Room {
-    constructor(roomCode, hostIP){
+    constructor(roomCode, hostID) {
         this.code = roomCode;
-        this.hostIP = hostIP;
-        this.clientIP = null;
+        this.hostID = hostID;
+        this.clientID = null;
     }
 
-    addPlayer(ip){
-        if(this.clientIP == null){
-            this.clientIP = ip;
-        }else{
+    addPlayer(id) {
+        if (this.clientIP == null) {
+            this.clientIP = id;
+        } else {
             throw new Error("Cannot add another player to this room");
         }
     }
 
-    
+
 }
 
 rooms = [];
 
-function genCode(){
-    return "ABCDEF";
+function genCode() {
+    return shortID.generate();
 }
 
-function isOriginAllowed(ip){
+function isOriginAllowed(ip) {
     return true;
 }
 
-function addRoom(IP){
+function addRoom(id) {
     let code = genCode();
-    rooms.push(new Room(code, IP));
-    console.log("Created room, IP: " + IP + " room code: " + code);
+    rooms.push(new Room(code, id));
+    console.log("Created room, IP: " + id.ip + " room code: " + code);
     return code;
 }
 
-function handleMessage(mess, conn){
-    mess = JSON.parse(mess);
-    if(mess.purp == "createroom"){
-        conn.sendUTF(JSON.stringify({
-            purp: "createRoom",
-            data: {roomCode: addRoom(conn.socket.remoteAddress)},
-            time: Date.now()
-        }));
-    }else if(mess.purp == "joinroom"){
-        for(let i = 0; i < rooms.length; i++){
-            if(rooms[i].code == mess.data.roomCode){
-                rooms[i].addPlayer(conn.socket.remoteAddress);
-                conn.sendUTF(JSON.stringify({
-                    purp: "joinroom",
-                    data: { roomCode: rooms[i].code },
-                    time: Date.now()
-                }));
-                
-                for(let j = 0; j < connections.length; j++){
-                    if(connections[j].socket.remoteAddress == rooms[i].hostIP){
-                        connections[j].sendUTF(JSON.stringify({
-                            purp: "start",
-                            data: { },
-                            time: Date.now()
-                        }));
-                        break;
-                    }
-                }
-
-                return;
-            }
+function findRoomByCode(roomCode) {
+    for (let i = 0; i < rooms.length; i++) {
+        if (rooms[i].code == roomCode) {
+            return i;
         }
-    }else{
+    }
+    return -1;
+}
+
+function findPlayerByID(id) {
+    for (let i = 0; i < connections.length; i++) {
+        if (connections[i].id && connections[i].id.ip == id.ip && connections[i].id.id == id.id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function createRoom(mess, conn){
+    conn.id = new ID(conn.socket.remoteAddress, mess.id);
+    conn.sendUTF(JSON.stringify({
+        purp: "createroom",
+        data: { roomCode: addRoom(conn.id) },
+        time: Date.now(),
+        id: conn.id.id
+    }));
+}
+
+function joinRoom(mess, conn){
+    conn.id = new ID(conn.socket.remoteAddress, mess.id);
+    let roomIndex = findRoomByCode(mess.data.roomCode);
+
+    if (roomIndex != -1) {
+        rooms[roomIndex].addPlayer(new ID(conn.socket.remoteAddress, mess.id));
+        conn.sendUTF(JSON.stringify({
+            purp: "joinroom",
+            data: { roomCode: rooms[roomIndex].code },
+            time: Date.now(),
+            id: conn.id.id
+        }));
+
+        let playerIndex = findPlayerByID(rooms[roomIndex].hostID);
+        if (playerIndex != -1) {
+            connections[playerIndex].sendUTF(JSON.stringify({
+                purp: "start",
+                data: {},
+                time: Date.now(),
+                id: connections[playerIndex].id.id
+            }));
+        } else {
+            console.log("Error: could not find other player");
+        }
+    } else {
+        conn.sendUTF(JSON.stringify({
+            purp: "joinroom",
+            data: { roomCode: -1 },
+            time: Date.now(),
+            id: conn.id.id
+        }));
+    }
+}
+
+function handleMessage(mess, conn) {
+    mess = JSON.parse(mess);
+    if (mess.purp == "createroom") {
+        createRoom(mess, conn);
+    } else if (mess.purp == "joinroom") {
+        joinRoom(mess, conn);
+    } else {
         conn.sendUTF(JSON.stringify({
             purp: "error",
             data: "",
@@ -95,12 +138,12 @@ var WebSocketServer = require('websocket').server;
 
 wss = new WebSocketServer({
     httpServer: server,
-    autoAcceptConnections:  false
+    autoAcceptConnections: false
 });
 
 let connections = [];
 
-wss.on('request', function(request){
+wss.on('request', function (request) {
     if (!isOriginAllowed(request.origin)) {
         // Make sure we only accept requests from an allowed origin
         request.reject();
@@ -120,5 +163,5 @@ wss.on('request', function(request){
     });
 
     connections.push(connection);
-    
+
 });
