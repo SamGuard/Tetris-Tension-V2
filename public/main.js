@@ -51,12 +51,45 @@ class ConnectionHandler {
         $('#gamePage').show();
         this.gameRunning = true;
 
-        this.game = new Game(this.isHost, this.socket);
-        console.log("Game running, isHost: " + this.isHost);
-        gameUpdateInterval = setInterval(function(){
-            conHandler.game.update();
-        }, 100);
 
+        console.log("Game running, isHost: " + this.isHost);
+        if (this.isHost) {
+            this.game = new Game(this.isHost, this.socket);
+            gameUpdateInterval = setInterval(function () {
+                conHandler.game.update();
+            }, 100);
+        }else{
+            this.setupGameControl();
+        }
+
+    }
+
+    setupGameControl(){
+        $('#gamePage').html(`
+            <div class= "GridContainer" >
+                <div class="grid-item-hide"></div>
+                <div class="MovementButtons" key="0">UP</div>
+                <div class="grid-item-hide"></div>
+                <div class="MovementButtons" key="1">LEFT</div>
+                <div class="grid-item-hide"></div>
+                <div class="MovementButtons" key="2">RIGHT</div>
+                <div class="grid-item-hide"></div>
+                <div class="MovementButtons" key="3">DOWN</div>
+                <div class="grid-item-hide"></div>
+            </div > 
+        `)
+
+        $('.MovementButtons').click(function () {
+            let key = $(this).attr("key");
+            let data = JSON.stringify({
+                purp: "pass",
+                data: { key: key },
+                time: Date.now(),
+                id: conHandler.id
+            });
+
+            conHandler.socket.send(data);
+        });
     }
 
 };
@@ -71,7 +104,7 @@ conHandler.socket.onmessage = function (event) {
     console.log(`[message] Data received from server: ${event.data}`);
     let data = JSON.parse(event.data);
 
-    if(data.id != conHandler.id){
+    if (data.id != conHandler.id) {
         console.log("Invalid ID: " + data.id);
         return;
     }
@@ -92,6 +125,10 @@ conHandler.socket.onmessage = function (event) {
     } else if (data.purp == "start") {
         conHandler.isHost = true;
         conHandler.startGame();
+    } else if(data.purp == "pass"){
+        conHandler.game.keyPressed(parseInt(data.data.key));
+    }else{
+        console.log("Error purpose not recognise");
     }
 
 };

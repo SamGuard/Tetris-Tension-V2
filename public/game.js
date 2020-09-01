@@ -1,7 +1,9 @@
+//Offsets for each of the shapes
 shapes = [
     [[0, 0], [1, 0], [0, 1], [1, 1]]
 ];
 
+//Class for the squares of the game board
 class Cell {
     constructor(col) {
         this.col = col;
@@ -9,12 +11,14 @@ class Cell {
     }
 }
 
+//Class for the shape falling from the top of the screen
 class Shape {
 
     constructor(shapeNum, boardWidth) {
-        this.cells = shapes[shapeNum];
-        this.x = Math.floor(boardWidth / 2);
+        this.cells = shapes[shapeNum];//The offsets of each cell in the shape
+        this.x = Math.floor(boardWidth / 2) - 1;//start the shape in the top middle of the screen
         this.y = 2;
+        this.isStuck = false;
     }
 
     rotateClockwise(dir) {//dir should either be 1 or -1 for clockwise or anticlockwise respectively
@@ -27,6 +31,7 @@ class Shape {
     }
 }
 
+//Game board
 class Board {
     constructor(width, height) {
         this.width = width;
@@ -42,42 +47,73 @@ class Board {
     }
 }
 
+//Handles all logic and drawing for the Game
 class Game {
-    constructor(isHost, conn) {
-        this.boardWidth
-        this.isHost = isHost;
-        this.conn = conn;
+    constructor(conn) {
+        this.conn = conn;//Socket connection to the server
+
+        $('#gamePage').html(`<canvas id="gameCanvas" width="200" height="400" style="border:1px solid #000000;"></canvas>`);
         this.canvas = document.getElementById("gameCanvas");
-        this.ctx = this.canvas.getContext("2d");
+        this.ctx = this.canvas.getContext("2d");//context to draw on
         this.canWidth = this.canvas.width;
         this.canHeight = this.canvas.height;
 
-        this.board = new Board(10, 20);
-        this.shape = new Shape(0, this.board.width);
+        this.board = new Board(10, 20);//Creates board with 10 by 20 cells in it
+        this.shape = new Shape(0, this.board.width);//Creates falling shape
 
         this.lastMoveTime = Date.now();
 
     }
 
-    canMoveShape(shape, x, y) {
-        for (let i = 0; i < shape.cells.length; i++) {
-            if (this.board.board[shape.cells[i][0] + shape.x + x][shape.cells[i][0] + shape.y + y].filled == true ||
-                shape.cells[i][0] + shape.x + x < 0 || shape.cells[i][0] + shape.x + x >= this.board.width ||
-                shape.cells[i][1] + shape.y + y < 0 || shape.cells[i][1] + shape.y + y >= this.board.height) {
-                return false;
+    keyPressed(key) {
+        if (key == 0) {
+            this.rotateClockwise(1);
+        } else if (key == 1) {
+            if (this.canMoveShape(-1, 0)) {
+                this.removeShape();
+                this.shape.x--;
+                this.applyShape();
+            }
+        } else if (key == 2) {
+            if (this.canMoveShape(1, 0)) {
+                this.removeShape();
+                this.shape.x++;
+                this.applyShape();
+            }
+        } else if (key == 3) {
+            if (this.canMoveShape(0, 1)) {
+                this.removeShape();
+                this.shape.y++;
+                this.applyShape();
             }
         }
+    }
+
+    canMoveShape(x, y) {
+        for (let i = 0; i < this.shape.cells.length; i++) {
+            if (this.shape.cells[i][0] + this.shape.x + x < 0 || this.shape.cells[i][0] + this.shape.x + x >= this.board.width ||
+                this.shape.cells[i][1] + this.shape.y + y < 0 || this.shape.cells[i][1] + this.shape.y + y >= this.board.height) {
+                return false;
+            } else if (this.board.board[this.shape.cells[i][0] + this.shape.x + x][this.shape.cells[i][1] + this.shape.y + y].filled == true) {
+                let isSelf = false;
+                for (let j = 0; j < this.shape.cells.length; j++) {
+                    if (this.shape.cells[i][0] + this.shape.x + x == this.shape.cells[j][0] + this.shape.x &&
+                        this.shape.cells[i][1] + this.shape.y + y == this.shape.cells[j][1] + this.shape.y) {
+                        isSelf = true;
+                    }
+                }
+                if (isSelf == false) {
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 
-    moveShape(x, y) {
-        for (let i = 0; i < this.shape.cells.length; i++) {
-            this.shape.cells[i][0] += x;
-            this.shape.cells[i][1] += y;
-        }
-    }
 
-    removeShape(){
+    //Removes falling shape from the board
+    removeShape() {
         this.shape.cells.forEach(c => {
             if (c[0] + this.shape.x >= 0 && c[0] + this.shape.x < this.board.width && c[1] + this.shape.y >= 0 && c[1] + this.shape.y < this.board.height) {
                 this.board.board[c[0] + this.shape.x][c[1] + this.shape.y].filled = false;
@@ -85,7 +121,8 @@ class Game {
         });
     }
 
-    applyShape(){
+    //Adds falling shape onto board
+    applyShape() {
         this.shape.cells.forEach(c => {
             if (c[0] + this.shape.x >= 0 && c[0] + this.shape.x < this.board.width && c[1] + this.shape.y >= 0 && c[1] + this.shape.y < this.board.height) {
                 this.board.board[c[0] + this.shape.x][c[1] + this.shape.y].filled = true;
@@ -95,18 +132,26 @@ class Game {
 
     updateGameBoard() {
 
-        if (Date.now() - this.lastMoveTime > 1000) {
-            this.removeShape();
-
-            if (this.canMoveShape(this.shape, 0, 1)) {
-                this.moveShape(0, 1);
-            }
-
+        if (Date.now() - this.lastMoveTime > 500) {
             this.lastMoveTime = Date.now();
+            if (this.shape.isStuck) {
+                this.shape = new Shape(0, this.board.width);
+                if (this.canMoveShape(0, 0) == false) {
+                    console.log("YOU LOSE");
+                }
+            } else {
+                this.removeShape();
+
+                if (this.canMoveShape(0, 1)) {
+                    this.shape.y++;
+                } else {
+                    this.shape.isStuck = true;
+                }
+            }
         }
 
         this.applyShape();
-           
+
     }
 
     drawBoard() {
@@ -132,16 +177,11 @@ class Game {
     }
 
     update() {
-        if (this.isHost == true) {
-            this.updateGameBoard();
-            this.drawBoard();
-        } else {
-            this.drawControls();
-        }
+        this.updateGameBoard();
+        this.drawBoard();
     }
 
     endGame() {
         clearInterval(this.interval);
     }
 };
-

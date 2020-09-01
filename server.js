@@ -15,6 +15,28 @@ console.log("listening on port " + port);
 
 
 //WebSocketServer
+/*
+
+WebSocketServer message structure:
+{
+    purp (purpose of the message),
+    data {} (object containing more information if needed),
+    time (UTC time),
+    id (id of the user the message if comming from or being sent to)
+}
+
+When the server recieves a message over the socket its purpose must have a purpose
+of either:
+createroom - to create a new room
+joinroom - to join a room
+start - to let the players know to start the game
+pass - used to pass information from one player to the other
+error - if something has gone wrong  
+*/
+
+
+//ID stores the ID of each user to connect, this is so people using the same IP
+//Can play 
 class ID {
     constructor(ip, id) {
         this.ip = ip;
@@ -22,6 +44,7 @@ class ID {
     }
 };
 
+//Stores information about the 2 players
 class Room {
     constructor(roomCode, hostID) {
         this.code = roomCode;
@@ -30,8 +53,8 @@ class Room {
     }
 
     addPlayer(id) {
-        if (this.clientIP == null) {
-            this.clientIP = id;
+        if (this.clientID == null) {
+            this.clientID = id;
         } else {
             throw new Error("Cannot add another player to this room");
         }
@@ -57,6 +80,13 @@ function addRoom(id) {
     return code;
 }
 
+function compareID(id1, id2){
+    if(id1.ip == id2.ip && id1.id == id2.id){
+        return true;
+    }
+    return false;
+}
+
 function findRoomByCode(roomCode) {
     for (let i = 0; i < rooms.length; i++) {
         if (rooms[i].code == roomCode) {
@@ -66,9 +96,18 @@ function findRoomByCode(roomCode) {
     return -1;
 }
 
+function findRoomByPlayerID(id){
+    for(let i = 0; i < rooms.length; i++){
+        if (compareID(rooms[i].hostID, id) || compareID(rooms[i].clientID, id)){
+            return i;
+        }
+    }
+    return -1;
+}
+
 function findPlayerByID(id) {
     for (let i = 0; i < connections.length; i++) {
-        if (connections[i].id && connections[i].id.ip == id.ip && connections[i].id.id == id.id) {
+        if (connections[i].id && compareID(id, connections[i].id)) {
             return i;
         }
     }
@@ -119,17 +158,50 @@ function joinRoom(mess, conn){
     }
 }
 
+function passMessage(mess, conn){
+    let sourcePlayerID = new ID(conn.remoteAddress, mess.id);
+    let roomIndex = findRoomByPlayerID(sourcePlayerID);
+    let destPlayerID = null;
+    //Finding the ID of the other player in the room
+    if(roomIndex == -1){
+        conn.sendUTF(JSON.stringify({
+            purp: "error",
+            data: { error: "Could not find other player" },
+            time: Date.now(),
+            id: mess.id
+        }));
+        return;
+    }
+
+    if(rooms[roomIndex].hostID == sourcePlayerID){
+        destPlayerID = rooms[roomIndex].clientID;
+    }else{
+        destPlayerID = rooms[roomIndex].hostID;
+    }
+
+    let connIndex = findPlayerByID(destPlayerID);
+    connections[connIndex].sendUTF(JSON.stringify({
+        purp: "pass",
+        data: mess.data,
+        time: mess.time,
+        id: destPlayerID.id
+    }));
+}
+
 function handleMessage(mess, conn) {
     mess = JSON.parse(mess);
     if (mess.purp == "createroom") {
         createRoom(mess, conn);
     } else if (mess.purp == "joinroom") {
         joinRoom(mess, conn);
+    }else if(mess.purp == "pass"){
+        passMessage(mess, conn);
     } else {
         conn.sendUTF(JSON.stringify({
             purp: "error",
-            data: "",
-            time: Date.now()
+            data: {error: "Purpose not recognise"},
+            time: Date.now(),
+            id: mess.id
         }));
     }
 }
