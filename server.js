@@ -97,6 +97,7 @@ function findRoomByCode(roomCode) {
 }
 
 function findRoomByPlayerID(id){
+    console.log(rooms);
     for(let i = 0; i < rooms.length; i++){
         if (compareID(rooms[i].hostID, id) || compareID(rooms[i].clientID, id)){
             return i;
@@ -160,7 +161,6 @@ function joinRoom(mess, conn){
 
 function passMessage(mess, conn){
     let sourcePlayerID = new ID(conn.remoteAddress, mess.id);
-    console.log(sourcePlayerID);
     let roomIndex = findRoomByPlayerID(sourcePlayerID);
     let destPlayerID = null;
     //Finding the ID of the other player in the room
