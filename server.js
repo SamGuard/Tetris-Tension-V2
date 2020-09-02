@@ -160,6 +160,7 @@ function joinRoom(mess, conn){
 
 function passMessage(mess, conn){
     let sourcePlayerID = new ID(conn.remoteAddress, mess.id);
+    console.log(sourcePlayerID);
     let roomIndex = findRoomByPlayerID(sourcePlayerID);
     let destPlayerID = null;
     //Finding the ID of the other player in the room
