@@ -15,7 +15,7 @@ class ConnectionHandler {
         this.gameRunning = false;
         this.roomCode = "";
         this.game;
-        this.IP = "ws://192.168.0.28:3000";
+        this.IP = "ws://" + window.location.host; //"ws://192.168.0.28:3000";
         this.socket = new WebSocket(this.IP);
         this.id = makeid(6);
         console.log("Your id is: " + this.id);

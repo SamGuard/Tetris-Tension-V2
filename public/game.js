@@ -65,22 +65,23 @@ class Game {
 
     }
 
+    //Carrys out actions based on the keys pressed
     keyPressed(key) {
-        if (key == 0) {
+        if (key == 0) {//Up
             this.rotateClockwise(1);
-        } else if (key == 1) {
+        } else if (key == 1) {//Left
             if (this.canMoveShape(-1, 0)) {
                 this.removeShape();
                 this.shape.x--;
                 this.applyShape();
             }
-        } else if (key == 2) {
+        } else if (key == 2) {//Right
             if (this.canMoveShape(1, 0)) {
                 this.removeShape();
                 this.shape.x++;
                 this.applyShape();
             }
-        } else if (key == 3) {
+        } else if (key == 3) {//Down
             if (this.canMoveShape(0, 1)) {
                 this.removeShape();
                 this.shape.y++;
@@ -91,11 +92,14 @@ class Game {
 
     canMoveShape(x, y) {
         for (let i = 0; i < this.shape.cells.length; i++) {
+            //Is the shape outside the board
             if (this.shape.cells[i][0] + this.shape.x + x < 0 || this.shape.cells[i][0] + this.shape.x + x >= this.board.width ||
                 this.shape.cells[i][1] + this.shape.y + y < 0 || this.shape.cells[i][1] + this.shape.y + y >= this.board.height) {
                 return false;
+            //Is the shape overlapping already placed blocks
             } else if (this.board.board[this.shape.cells[i][0] + this.shape.x + x][this.shape.cells[i][1] + this.shape.y + y].filled == true) {
                 let isSelf = false;
+                //Is this a false positive caused by the shape overlapping itself
                 for (let j = 0; j < this.shape.cells.length; j++) {
                     if (this.shape.cells[i][0] + this.shape.x + x == this.shape.cells[j][0] + this.shape.x &&
                         this.shape.cells[i][1] + this.shape.y + y == this.shape.cells[j][1] + this.shape.y) {
@@ -131,7 +135,6 @@ class Game {
     }
 
     updateGameBoard() {
-
         if (Date.now() - this.lastMoveTime > 500) {
             this.lastMoveTime = Date.now();
             if (this.shape.isStuck) {
@@ -151,7 +154,6 @@ class Game {
         }
 
         this.applyShape();
-
     }
 
     drawBoard() {
@@ -170,10 +172,6 @@ class Game {
                 this.ctx.strokeRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
             }
         }
-    }
-
-    drawControls() {
-
     }
 
     update() {
