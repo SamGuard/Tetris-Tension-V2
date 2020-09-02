@@ -97,7 +97,6 @@ function findRoomByCode(roomCode) {
 }
 
 function findRoomByPlayerID(id){
-    console.log(rooms);
     for(let i = 0; i < rooms.length; i++){
         if (compareID(rooms[i].hostID, id) || compareID(rooms[i].clientID, id)){
             return i;
@@ -116,7 +115,7 @@ function findPlayerByID(id) {
 }
 
 function createRoom(mess, conn){
-    conn.id = new ID(conn.socket.remoteAddress, mess.id);
+    conn.id = new ID(conn.remoteAddress, mess.id);
     conn.sendUTF(JSON.stringify({
         purp: "createroom",
         data: { roomCode: addRoom(conn.id) },
@@ -126,11 +125,11 @@ function createRoom(mess, conn){
 }
 
 function joinRoom(mess, conn){
-    conn.id = new ID(conn.socket.remoteAddress, mess.id);
+    conn.id = new ID(conn.remoteAddress, mess.id);
     let roomIndex = findRoomByCode(mess.data.roomCode);
 
     if (roomIndex != -1) {
-        rooms[roomIndex].addPlayer(new ID(conn.socket.remoteAddress, mess.id));
+        rooms[roomIndex].addPlayer(new ID(conn.remoteAddress, mess.id));
         conn.sendUTF(JSON.stringify({
             purp: "joinroom",
             data: { roomCode: rooms[roomIndex].code },
