@@ -1,5 +1,9 @@
 <html>
     <head>
-        <script src="redirect.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            if (window.location.pathname != "" && window.location.pathname != "/") {
+                    window.location.href = "/";
+            }
+        </script>
     </head>
 </html>

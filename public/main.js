@@ -15,10 +15,22 @@ class ConnectionHandler {
         this.gameRunning = false;
         this.roomCode = "";
         this.game;
-        this.IP = "wss://" + window.location.host; //"ws://192.168.0.28:3000";
-        this.socket = new WebSocket(this.IP);
         this.id = makeid(6);
         console.log("Your id is: " + this.id);
+
+        this.IP = null;
+
+        //When testing this on my local machine the protocol is http so this 
+        //automatically switches the connection type
+        if (location.protocol == "https:"){
+            this.IP = "wss://" + window.location.host;
+        }else{
+            this.IP = "ws://" + window.location.host;
+        }
+        
+        
+        this.socket = new WebSocket(this.IP);
+        
     }
 
     createRoom() {
@@ -58,13 +70,13 @@ class ConnectionHandler {
             gameUpdateInterval = setInterval(function () {
                 conHandler.game.update();
             }, 100);
-        }else{
+        } else {
             this.setupGameControl();
         }
 
     }
 
-    setupGameControl(){
+    setupGameControl() {
         $('#gamePage').html(`
             <div class= "GridContainer" >
                 <div class="grid-item-hide"></div>
@@ -125,9 +137,9 @@ conHandler.socket.onmessage = function (event) {
     } else if (data.purp == "start") {
         conHandler.isHost = true;
         conHandler.startGame();
-    } else if(data.purp == "pass"){
+    } else if (data.purp == "pass") {
         conHandler.game.keyPressed(parseInt(data.data.key));
-    }else{
+    } else {
         console.log("Error purpose not recognise");
     }
 
@@ -140,6 +152,7 @@ conHandler.socket.onclose = function (event) {
     } else {
         console.log('[close] Connection died');
     }
+    alert("Lost connection please refresh the page");
 };
 
 conHandler.socket.onerror = function (error) {

@@ -1,6 +1,7 @@
 //Offsets for each of the shapes
 shapes = [
-    [[0, 0], [1, 0], [0, 1], [1, 1]]
+    [[0, 0], [0, 1], [0, -1], [0, 0]],
+    [[0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0.5]]
 ];
 
 //Class for the squares of the game board
@@ -14,21 +15,20 @@ class Cell {
 //Class for the shape falling from the top of the screen
 class Shape {
 
-    constructor(shapeNum, boardWidth) {
-        this.cells = shapes[shapeNum];//The offsets of each cell in the shape
-        this.x = Math.floor(boardWidth / 2) - 1;//start the shape in the top middle of the screen
-        this.y = 2;
+    constructor(shapeNum, x, y) {
+        this.cells = [];//The offsets of each cell in the shape
+        for (let i = 0; i < shapes[shapeNum].length - 1; i++) {
+            this.cells.push(shapes[shapeNum][i]);
+        }
+
+        this.anchorX = shapes[shapeNum][shapes[shapeNum].length - 1][0];
+        this.anchorY = shapes[shapeNum][shapes[shapeNum].length - 1][1];
+        this.x = x;
+        this.y = y;
         this.isStuck = false;
     }
 
-    rotateClockwise(dir) {//dir should either be 1 or -1 for clockwise or anticlockwise respectively
-        let tempX;
-        for (let i = 0; i < this.cells.length; i++) {
-            tempX = this.cells[i][0];
-            this.cells[i][0] = dir * this.cells[i][1];
-            this.cells[i][1] = -dir * tempX;
-        }
-    }
+
 }
 
 //Game board
@@ -59,7 +59,7 @@ class Game {
         this.canHeight = this.canvas.height;
 
         this.board = new Board(10, 20);//Creates board with 10 by 20 cells in it
-        this.shape = new Shape(0, this.board.width);//Creates falling shape
+        this.shape = new Shape(0, Math.floor(this.board.width / 2) - 1, 2);//Creates falling shape
 
         this.lastMoveTime = Date.now();
 
@@ -68,7 +68,7 @@ class Game {
     //Carrys out actions based on the keys pressed
     keyPressed(key) {
         if (key == 0) {//Up
-            this.rotateClockwise(1);
+            this.rotate(1);
         } else if (key == 1) {//Left
             if (this.canMoveShape(-1, 0)) {
                 this.removeShape();
@@ -90,13 +90,86 @@ class Game {
         }
     }
 
+    canRotate(dir) {
+        let newX = 0;
+        let newY = 0;
+        for (let i = 0; i < this.shape.cells.length; i++) {
+            newX = dir * (this.shape.cells[i][1] - this.shape.anchorX) + this.shape.anchorX;
+            newY = -dir * (this.shape.cells[i][0] - this.shape.anchorY) + this.shape.anchorY;
+            if (newX + this.shape.x < 0 || newX  + this.shape.x >= this.board.width ||
+                newY + this.shape.y < 0 || newY + this.shape.y >= this.board.height) {
+                    return false;
+            } else if (this.board.board[newX + this.shape.x][newY + this.shape.y].filled == true) {
+                let isSelf = false;
+                for (let j = 0; j < this.shape.cells.length; j++) {
+                    if (newX == this.shape.cells[i][0] &&
+                        newY == this.shape.cells[i][1]) {
+                        isSelf = true;
+                        break;
+                    }
+                }
+                if (!isSelf) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    rotate(dir) {//dir should either be 1 or -1 for clockwise or anticlockwise respectively
+        if (this.canRotate(dir)) {
+            this.removeShape();
+            let newX = 0;
+            let newY = 0;
+            for (let i = 0; i < this.shape.cells.length; i++) {
+                newX = dir * (this.shape.cells[i][1] - this.shape.anchorX);
+                newY = -dir * (this.shape.cells[i][0] - this.shape.anchorY);
+
+                this.shape.cells[i][0] = newX;
+                this.shape.cells[i][1] = newY;
+            }
+        }
+
+    }
+
+    rowFull(row) {
+        for (let i = 0; i < this.board.width; i++) {
+            if (!this.board.board[i][row].filled) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    moveRow(row, dist) {
+        for (let i = 0; i < this.board.width; i++) {
+            this.board.board[i][row + dist].filled = this.board.board[i][row].filled;
+            this.board.board[i][row].filled = false;
+        }
+    }
+
+    removeRowsIfPossible() {
+        let row = this.board.height - 1;
+        while (row > 0 && this.rowFull(row)) {
+            row--;
+        }
+
+        if (row < this.board.height - 1) {
+            for (let i = row; i >= 0; i--) {
+                this.moveRow(i, this.board.height - row - 1);
+            }
+        }
+
+    }
+
     canMoveShape(x, y) {
         for (let i = 0; i < this.shape.cells.length; i++) {
             //Is the shape outside the board
             if (this.shape.cells[i][0] + this.shape.x + x < 0 || this.shape.cells[i][0] + this.shape.x + x >= this.board.width ||
                 this.shape.cells[i][1] + this.shape.y + y < 0 || this.shape.cells[i][1] + this.shape.y + y >= this.board.height) {
                 return false;
-            //Is the shape overlapping already placed blocks
+                //Is the shape overlapping already placed blocks
             } else if (this.board.board[this.shape.cells[i][0] + this.shape.x + x][this.shape.cells[i][1] + this.shape.y + y].filled == true) {
                 let isSelf = false;
                 //Is this a false positive caused by the shape overlapping itself
@@ -104,6 +177,7 @@ class Game {
                     if (this.shape.cells[i][0] + this.shape.x + x == this.shape.cells[j][0] + this.shape.x &&
                         this.shape.cells[i][1] + this.shape.y + y == this.shape.cells[j][1] + this.shape.y) {
                         isSelf = true;
+                        break;
                     }
                 }
                 if (isSelf == false) {
@@ -138,10 +212,13 @@ class Game {
         if (Date.now() - this.lastMoveTime > 500) {
             this.lastMoveTime = Date.now();
             if (this.shape.isStuck) {
-                this.shape = new Shape(0, this.board.width);
-                if (this.canMoveShape(0, 0) == false) {
+                this.removeRowsIfPossible();
+                this.shape = new Shape(0, Math.floor(this.board.width / 2) - 1, -2);
+
+                if (this.canMoveShape(0, 4) == false) {
                     console.log("YOU LOSE");
                 }
+                this.shape.y += 4;
             } else {
                 this.removeShape();
 
