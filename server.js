@@ -174,20 +174,29 @@ function passMessage(mess, conn){
     if(roomIndex == -1){
         conn.sendUTF(JSON.stringify({
             purp: "error",
-            data: { error: "Could not find other player" },
+            data: { error: "Could not find room" },
             time: Date.now(),
             id: mess.id
         }));
         return;
     }
 
-    if(rooms[roomIndex].hostID == sourcePlayerID){
+    if(compareID(rooms[roomIndex].hostID, sourcePlayerID) == true){
         destPlayerID = rooms[roomIndex].clientID;
     }else{
         destPlayerID = rooms[roomIndex].hostID;
     }
 
     let connIndex = findPlayerByID(destPlayerID);
+    if(connIndex == -1){
+        conn.sendUTF(JSON.stringify({
+            purp: "error",
+            data: { error: "Could not find other player" },
+            time: Date.now(),
+            id: mess.id
+        }));
+        return;
+    }
     connections[connIndex].sendUTF(JSON.stringify({
         purp: "pass",
         data: mess.data,

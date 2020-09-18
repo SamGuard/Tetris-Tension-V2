@@ -1,7 +1,9 @@
 //Offsets for each of the shapes
+//End index hold the anchor point for the shapes to rotate about
 shapes = [
-    [[0, 0], [0, 1], [0, -1], [0, 0]],
-    [[0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0.5]]
+    [[0, 0], [0, 1], [0, -1], [0, 2], [0, 0.5]], //Line
+    [[0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0.5]], //Box
+    [[0, 0], [1, 0], [-1, 0], [-1, -1], [0, 0]] //L-shape
 ];
 
 //Class for the squares of the game board
@@ -50,19 +52,41 @@ class Board {
 //Handles all logic and drawing for the Game
 class Game {
     constructor(conn) {
+
         this.conn = conn;//Socket connection to the server
 
-        $('#gamePage').html(`<canvas id="gameCanvas" width="200" height="400" style="border:1px solid #000000;"></canvas>`);
+        $("#gameMenu").show();
+        $('#gameCanvasContainer').hide();
+        $('#gameControls').hide();
+        $('#gameEndScreen').hide();
+
+        this.pageWidth = $(document).width();
+        this.pageHeight = $(document).height();
+        let aspectRatio = this.pageWidth / this.pageHeight;
+        if (aspectRatio > 0.5) {
+            $('#gameCanvasContainer').html(`<canvas id="gameCanvas" width="${0.98 * this.pageHeight * 0.5}" height="${0.98 * this.pageHeight}" style="border:1px solid #000000;"></canvas>`);
+        } else {
+            $('#gameCanvasContainer').html(`<canvas id="gameCanvas" width="${0.98 * this.pageWidth}" height="${this.pageWidth * 0.98 * 2}" style="border:1px solid #000000;"></canvas>`);
+        }
+
         this.canvas = document.getElementById("gameCanvas");
         this.ctx = this.canvas.getContext("2d");//context to draw on
         this.canWidth = this.canvas.width;
         this.canHeight = this.canvas.height;
 
         this.board = new Board(10, 20);//Creates board with 10 by 20 cells in it
-        this.shape = new Shape(0, Math.floor(this.board.width / 2) - 1, 2);//Creates falling shape
+        this.shape = new Shape(Math.floor(shapes.length * Math.random()), Math.floor(this.board.width / 2) - 1, 2);//Creates falling shape
 
         this.lastMoveTime = Date.now();
 
+        this.screen = -1; //-1 = build pages, 0 = menu, 1 = game screen, 2 = end game screen
+
+    }
+
+    handleMess(mess) {
+        if (mess.data.key != undefined) {
+            this.keyPressed(mess.data.key);
+        }
     }
 
     //Carrys out actions based on the keys pressed
@@ -96,14 +120,14 @@ class Game {
         for (let i = 0; i < this.shape.cells.length; i++) {
             newX = dir * (this.shape.cells[i][1] - this.shape.anchorX) + this.shape.anchorX;
             newY = -dir * (this.shape.cells[i][0] - this.shape.anchorY) + this.shape.anchorY;
-            if (newX + this.shape.x < 0 || newX  + this.shape.x >= this.board.width ||
+            if (newX + this.shape.x < 0 || newX + this.shape.x >= this.board.width ||
                 newY + this.shape.y < 0 || newY + this.shape.y >= this.board.height) {
-                    return false;
+                return false;
             } else if (this.board.board[newX + this.shape.x][newY + this.shape.y].filled == true) {
                 let isSelf = false;
                 for (let j = 0; j < this.shape.cells.length; j++) {
-                    if (newX == this.shape.cells[i][0] &&
-                        newY == this.shape.cells[i][1]) {
+                    if (newX == this.shape.cells[j][0] &&
+                        newY == this.shape.cells[j][1]) {
                         isSelf = true;
                         break;
                     }
@@ -125,8 +149,8 @@ class Game {
                 newX = dir * (this.shape.cells[i][1] - this.shape.anchorX);
                 newY = -dir * (this.shape.cells[i][0] - this.shape.anchorY);
 
-                this.shape.cells[i][0] = newX;
-                this.shape.cells[i][1] = newY;
+                this.shape.cells[i][0] = newX + this.shape.anchorX;
+                this.shape.cells[i][1] = newY + this.shape.anchorY;
             }
         }
 
@@ -150,14 +174,11 @@ class Game {
     }
 
     removeRowsIfPossible() {
-        let row = this.board.height - 1;
-        while (row > 0 && this.rowFull(row)) {
-            row--;
-        }
-
-        if (row < this.board.height - 1) {
-            for (let i = row; i >= 0; i--) {
-                this.moveRow(i, this.board.height - row - 1);
+        for (let row = 0; row < this.board.height; row++) {
+            if (this.rowFull(row)) {
+                for (let i = row - 1; i >= 0; i--) {
+                    this.moveRow(i, 1);
+                }
             }
         }
 
@@ -213,10 +234,10 @@ class Game {
             this.lastMoveTime = Date.now();
             if (this.shape.isStuck) {
                 this.removeRowsIfPossible();
-                this.shape = new Shape(0, Math.floor(this.board.width / 2) - 1, -2);
+                this.shape = new Shape(Math.floor(shapes.length * Math.random()), Math.floor(this.board.width / 2) - 1, -2);
 
                 if (this.canMoveShape(0, 4) == false) {
-                    console.log("YOU LOSE");
+                    this.switchScreen(2);
                 }
                 this.shape.y += 4;
             } else {
@@ -251,9 +272,66 @@ class Game {
         }
     }
 
+    switchScreen(s) {
+        this.screen = s;
+        switch (s) {
+            case 0:
+                $('#gameReadyButton').html(`
+                    <b>Ready?</b>
+                `);
+                $('#gameReadyButton').click(function () {
+                    conHandler.game.switchScreen(1);
+                });
+                $('#gameMenu').show();
+                $('#gameCanvasContainer').hide();
+                $('#gameEndScreen').hide();
+                break;
+            case 1:
+                {
+                    let data = JSON.stringify({
+                        purp: "pass",
+                        data: { updateGameState: 1 },
+                        time: Date.now(),
+                        id: conHandler.id
+                    });
+                    conHandler.socket.send(data);
+                }
+                $('#gameMenu').hide();
+                $('#gameCanvasContainer').show();
+                $('#gameEndScreen').hide();
+
+                break;
+            case 2:
+                {
+                    let data = JSON.stringify({
+                        purp: "pass",
+                        data: { updateGameState: 2 },
+                        time: Date.now(),
+                        id: conHandler.id
+                    });
+                    conHandler.socket.send(data);
+                }
+                $('#gameEndScreen').html(`
+                    <b>Game Over</b>
+                `);
+                $('#gameMenu').hide();
+                $('#gameCanvasContainer').hide();
+                $('#gameEndScreen').show();
+                break;
+        }
+    }
+
     update() {
-        this.updateGameBoard();
-        this.drawBoard();
+        if (this.screen == -1) {
+            this.switchScreen(0);
+        } else if (this.screen == 0) {
+
+        } else if (this.screen == 1) {
+            this.updateGameBoard();
+            this.drawBoard();
+        } else if (this.screen == 2) {
+
+        }
     }
 
     endGame() {

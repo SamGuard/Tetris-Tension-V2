@@ -71,38 +71,11 @@ class ConnectionHandler {
                 conHandler.game.update();
             }, 100);
         } else {
-            this.setupGameControl();
+            this.game = new GameController();
         }
 
     }
-
-    setupGameControl() {
-        $('#gamePage').html(`
-            <div class= "GridContainer" >
-                <div class="grid-item-hide"></div>
-                <div class="MovementButtons" key="0">UP</div>
-                <div class="grid-item-hide"></div>
-                <div class="MovementButtons" key="1">LEFT</div>
-                <div class="grid-item-hide"></div>
-                <div class="MovementButtons" key="2">RIGHT</div>
-                <div class="grid-item-hide"></div>
-                <div class="MovementButtons" key="3">DOWN</div>
-                <div class="grid-item-hide"></div>
-            </div > 
-        `)
-
-        $('.MovementButtons').click(function () {
-            let key = $(this).attr("key");
-            let data = JSON.stringify({
-                purp: "pass",
-                data: { key: key },
-                time: Date.now(),
-                id: conHandler.id
-            });
-
-            conHandler.socket.send(data);
-        });
-    }
+        
 
 };
 
@@ -138,7 +111,7 @@ conHandler.socket.onmessage = function (event) {
         conHandler.isHost = true;
         conHandler.startGame();
     } else if (data.purp == "pass") {
-        conHandler.game.keyPressed(parseInt(data.data.key));
+        conHandler.game.handleMess(data);
     } else {
         console.log("Error purpose not recognise");
     }

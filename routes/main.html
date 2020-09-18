@@ -5,6 +5,7 @@
         <script src="redirect.js" type="text/javascript"></script>
         <script src="main.js" type="text/javascript"></script>
         <script src="game.js" type="text/javascript"></script>
+        <script src="gameControl.js" type="text/javascript"></script>
         <link rel="stylesheet" href="main.css"></script>
     </head>
     <body>
@@ -23,7 +24,22 @@
                 <button id="createBackButton" type="button">Back</button>
             </div>
             <div id="gamePage">
-                
+                <div id="gameMenu">
+                    <div id="gameReadyButton"></div>
+                </div>
+                <div id="gameControls" class="GridContainer">
+                    <div class="grid-item-hide"></div>
+                    <div class="MovementButtons" key="0">UP</div>
+                    <div class="grid-item-hide"></div>
+                    <div class="MovementButtons" key="1">LEFT</div>
+                    <div class="grid-item-hide"></div>
+                    <div class="MovementButtons" key="2">RIGHT</div>
+                    <div class="grid-item-hide"></div>
+                    <div class="MovementButtons" key="3">DOWN</div>
+                    <div class="grid-item-hide"></div>
+                </div>
+                <div id="gameCanvasContainer"></div>
+                <div id="gameEndScreen"></div>
             </div>
         </div>
     </body>
