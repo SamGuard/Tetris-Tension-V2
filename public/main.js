@@ -103,7 +103,7 @@ conHandler.socket.onopen = function (e) {
 };
 
 conHandler.socket.onmessage = function (event) {
-    console.log(`[message] Data received from server: ${event.data}`);
+    //console.log(`[message] Data received from server: ${event.data}`);
     let data = JSON.parse(event.data);
 
     if (data.id != conHandler.id) {
@@ -152,8 +152,9 @@ conHandler.socket.onerror = function (error) {
 $(document).ready(function () {
 
     $('#homePage').show();
-    $('#createGamePage').hide();
     $('#gamePage').hide();
+    $('#helpScreen').hide();
+    $('#createGamePage').hide();
 
     $('#joinGameButton').click(function () {
         conHandler.roomCode = $('#codeInput').val();
@@ -163,7 +164,7 @@ $(document).ready(function () {
     $('#createGameButton').click(function () {
         $('#homePage').hide();
         $('#gamePage').hide();
-
+        $('#helpScreen').hide();
         $('#createGamePage').show();
         conHandler.createRoom();
     });
@@ -171,10 +172,28 @@ $(document).ready(function () {
     $('#createBackButton').click(function () {
 
         conHandler.destroyRoom();
-        $('#createGamePage').hide();
-        $('#gamePage').hide();
-
         $('#homePage').show();
+        $('#gamePage').hide();
+        $('#helpScreen').hide();
+        $('#createGamePage').hide();
+    });
+
+    $('#newGameButton').click(function(){
+        window.location = "";
+    });
+
+    $('#help').click(function(){
+        $('#homePage').hide();
+        $('#gamePage').hide();
+        $('#helpScreen').show();
+        $('#createGamePage').hide();
+    });
+
+    $('#helpScreenBack').click(function(){
+        $('#homePage').show();
+        $('#gamePage').hide();
+        $('#helpScreen').hide();
+        $('#createGamePage').hide();
     });
 
 });

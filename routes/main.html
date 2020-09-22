@@ -26,6 +26,27 @@
             <div id="createGamePin"></div>
             <button id="createBackButton" type="button">Back</button>
         </div>
+        <div id="helpScreen">
+            <div>
+                Welcome to Tetris Tension, this is a twist on the classic game Tetris. Simply you and a partner will be playing
+                Tetris. Sounds easy? Well one of you will not be able to control the game and will only be able to see the game
+                board, and the other will be able to control the falling pieces but not be able to see the game. You work
+                together as a team to get the highest score possible.
+                
+                Starting a game:
+                To play the game find someone you dont want to be friends with anymore, then one of you creates a game, this will
+                return a 6 digit code, the other person then enteres that into the box at the top and clicks join game. This takes
+                both players to the waiting screen where you wait for the host to click ready.
+                
+                Scoring:
+                8 points for clearing a row, this is increased exponentially for every consecutive row cleared, using the formula:
+                New Score = Old Score + 8^(Number of rows cleared)
+                So if you manage to clear 3 rows in 1 go you will get 8^3 added to your score.
+
+                
+            </div>
+            <button id="helpScreenBack" type="button">Back</button><br>
+        </div>
         <div id="gamePage">
             <div id="gameMenu">
                 <div id="gameReadyButton"></div>
@@ -47,7 +68,11 @@
             <div id="gameCanvasContainer">
                 <div id="gameScoreBoard">Score: 0</div>
             </div>
-            <div id="gameEndScreen"></div>
+            <div id="gameEndScreen">
+                <b>Game Over</b>
+                <div id="gameEndScore"></div><br>
+                <button id="newGameButton" type="button">New Game</button>
+            </div>
         </div>
     </div>
 </body>

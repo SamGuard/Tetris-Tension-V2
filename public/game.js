@@ -198,11 +198,11 @@ class Game {
                 }
             }
         }
-        if(rowsCleared > 0){
-        this.score += Math.pow(8, rowsCleared);
-        $('#gameScoreBoard').html(`
+        if (rowsCleared > 0) {
+            this.score += Math.pow(8, rowsCleared);
+            $('#gameScoreBoard').html(`
             <b>${this.score}</b>
-        `);
+            `);
 
             let data = JSON.stringify({
                 purp: "pass",
@@ -213,7 +213,7 @@ class Game {
             conHandler.socket.send(data);
         }
 
-        
+
     }
 
     canMoveShape(x, y) {
@@ -344,8 +344,8 @@ class Game {
                     });
                     conHandler.socket.send(data);
                 }
-                $('#gameEndScreen').html(`
-                    <b>Game Over <br>Score: ${this.score}</b>
+                $('#gameEndScore').html(`
+                    <b>Score: ${this.score}</b>
                 `);
                 $('#gameMenu').hide();
                 $('#gameCanvasContainer').hide();

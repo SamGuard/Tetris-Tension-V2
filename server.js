@@ -211,7 +211,6 @@ function passMessage(mess, conn) {
 
 function destroyRoom(mess, conn) {
     let playerID = new ID(conn.remoteAddress, mess.id);
-    console.log(playerID);
     let roomIndex = findRoomByPlayerID(playerID);
     if (roomIndex != -1) {
         rooms.splice(roomIndex, 1);
@@ -274,7 +273,7 @@ wss.on('request', function (request) {
     console.log((new Date()) + ' Connection accepted. IP: ' + connection.remoteAddress);
 
     connection.on('message', function (message) {
-        console.log('Received Message: ' + message.utf8Data);
+        //console.log('Received Message: ' + message.utf8Data);
         handleMessage(message.utf8Data, connection);
     });
     connection.on('close', function (reasonCode, description) {

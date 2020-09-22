@@ -37,8 +37,8 @@ class GameController{
                 this.startGame();
                 break;
             case 2:
-                $('#gameEndScreen').html(`
-                    <b>Game Over <br>Score: ${this.score}</b>
+                $('#gameEndScore').html(`
+                    <b>Score: ${this.score}</b>
                 `);
                 $('#gameMenu').hide();
                 $('#gameControlsContainer').hide();
