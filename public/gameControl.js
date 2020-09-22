@@ -1,15 +1,22 @@
 class GameController{
     constructor(){
+        this.score = 0;
         $('#gameReadyButton').html(`
             <b>Waiting for player to start</b>
         `);
         $('#gameMenu').show();
-        $('#gameControls').hide();
+        $('#gameControlsContainer').hide();
         $('#gameCanvasContainer').hide();
         $('#gameEndScreen').hide();
     }
 
     handleMess(mess){
+        if (mess.data.score != undefined) {
+            this.score = mess.data.score
+            $('#gameControllerScoreBoard').html(`
+                <b>${this.score}</b>
+            `);
+        }
         if(mess.data.updateGameState != undefined){
             this.switchScreen(mess.data.updateGameState);
         }
@@ -20,21 +27,21 @@ class GameController{
         switch (s) {
             case 0:
                 $('#gameMenu').show();
-                $('#gameControls').hide();
+                $('#gameControlsContainer').hide();
                 $('#gameEndScreen').hide();
                 break;
             case 1:
                 $('#gameMenu').hide();
-                $('#gameControls').show();
+                $('#gameControlsContainer').show();
                 $('#gameEndScreen').hide();
                 this.startGame();
                 break;
             case 2:
                 $('#gameEndScreen').html(`
-                    <b>Game Over</b>
+                    <b>Game Over <br>Score: ${this.score}</b>
                 `);
                 $('#gameMenu').hide();
-                $('#gameControls').hide();
+                $('#gameControlsContainer').hide();
                 $('#gameEndScreen').show();
                 break;
         }
@@ -51,6 +58,29 @@ class GameController{
             });
 
             conHandler.socket.send(data);
+        });
+
+        $(document).keydown(function(event){
+            let data = {
+                purp: "pass",
+                data: {},
+                time: Date.now(),
+                id: conHandler.id
+            };
+
+            if(event.key == "ArrowUp"){
+                data.data.key = 0;
+            }else if(event.key == "ArrowLeft"){
+                data.data.key = 1;
+            }else if(event.key == "ArrowRight"){
+                data.data.key = 2;
+            }else if(event.key == "ArrowDown"){
+                data.data.key = 3;
+            }else{
+                return;
+            }
+
+            conHandler.socket.send(JSON.stringify(data));
         });
     }
 

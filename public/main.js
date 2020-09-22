@@ -22,13 +22,12 @@ class ConnectionHandler {
 
         //When testing this on my local machine the protocol is http so this 
         //automatically switches the connection type
-        if (location.protocol == "https:"){
+        if (location.protocol == "https:") {
             this.IP = "wss://" + window.location.host;
-        }else{
+        } else {
             this.IP = "ws://" + window.location.host;
         }
-        
-        
+
         this.socket = new WebSocket(this.IP);
         
     }
@@ -36,6 +35,16 @@ class ConnectionHandler {
     createRoom() {
         let data = JSON.stringify({
             purp: "createroom",
+            data: {},
+            time: Date.now(),
+            id: this.id
+        });
+        this.socket.send(data);
+    }
+
+    destroyRoom() {
+        let data = JSON.stringify({
+            purp: "destroyroom",
             data: {},
             time: Date.now(),
             id: this.id
@@ -75,13 +84,21 @@ class ConnectionHandler {
         }
 
     }
-        
+
 
 };
 
 let conHandler = new ConnectionHandler();
 let gameUpdateInterval = null;
 conHandler.socket.onopen = function (e) {
+    let data = JSON.stringify({
+        purp: "setid",
+        data: {},
+        time: Date.now(),
+        id: conHandler.id
+    });
+    conHandler.socket.send(data);
+
     console.log("[open] Connection established");
 };
 
@@ -152,6 +169,8 @@ $(document).ready(function () {
     });
 
     $('#createBackButton').click(function () {
+
+        conHandler.destroyRoom();
         $('#createGamePage').hide();
         $('#gamePage').hide();
 

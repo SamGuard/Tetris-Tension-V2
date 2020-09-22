@@ -1,32 +1,36 @@
 <html>
-    <head>
-        <title>TETRIS TENTION V2</title>
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
-        <script src="redirect.js" type="text/javascript"></script>
-        <script src="main.js" type="text/javascript"></script>
-        <script src="game.js" type="text/javascript"></script>
-        <script src="gameControl.js" type="text/javascript"></script>
-        <link rel="stylesheet" href="main.css"></script>
-    </head>
-    <body>
-        <div id="pageContainer">
-            <div id="homePage">
-                <form id="mainBlock">
-                    <b>TETRIS TENTION V2</b><br>
-                    <input id="codeInput" type="text" placeholder="PIN"><br>
-                    <button id="joinGameButton" type="button">Join Game</button><br>
-                    <button id="createGameButton" type="button">Create Game</button><br>
-                    <button id="help" type="button">Help</button><br>
-                </form>
+
+<head>
+    <title>TETRIS TENTION V2</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <script src="redirect.js" type="text/javascript"></script>
+    <script src="main.js" type="text/javascript"></script>
+    <script src="game.js" type="text/javascript"></script>
+    <script src="gameControl.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="main.css">
+    </script>
+</head>
+
+<body>
+    <div id="pageContainer">
+        <div id="homePage">
+            <form id="mainBlock">
+                <b>TETRIS TENTION V2</b><br>
+                <input id="codeInput" type="text" placeholder="PIN"><br>
+                <button id="joinGameButton" type="button">Join Game</button><br>
+                <button id="createGameButton" type="button">Create Game</button><br>
+                <button id="help" type="button">Help</button><br>
+            </form>
+        </div>
+        <div id="createGamePage">
+            <div id="createGamePin"></div>
+            <button id="createBackButton" type="button">Back</button>
+        </div>
+        <div id="gamePage">
+            <div id="gameMenu">
+                <div id="gameReadyButton"></div>
             </div>
-            <div id="createGamePage">
-                <div id="createGamePin"></div>
-                <button id="createBackButton" type="button">Back</button>
-            </div>
-            <div id="gamePage">
-                <div id="gameMenu">
-                    <div id="gameReadyButton"></div>
-                </div>
+            <div id="gameControlsContainer">
                 <div id="gameControls" class="GridContainer">
                     <div class="grid-item-hide"></div>
                     <div class="MovementButtons" key="0">UP</div>
@@ -38,9 +42,14 @@
                     <div class="MovementButtons" key="3">DOWN</div>
                     <div class="grid-item-hide"></div>
                 </div>
-                <div id="gameCanvasContainer"></div>
-                <div id="gameEndScreen"></div>
+                <div id="gameControllerScoreBoard"><b>Score: 0</b></div>
             </div>
+            <div id="gameCanvasContainer">
+                <div id="gameScoreBoard">Score: 0</div>
+            </div>
+            <div id="gameEndScreen"></div>
         </div>
-    </body>
+    </div>
+</body>
+
 </html>

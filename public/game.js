@@ -3,7 +3,11 @@
 shapes = [
     [[0, 0], [0, 1], [0, -1], [0, 2], [0, 0.5]], //Line
     [[0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0.5]], //Box
-    [[0, 0], [1, 0], [-1, 0], [-1, -1], [0, 0]] //L-shape
+    [[0, 0], [-1, 0], [1, 0], [1, 1], [0, 0]], //L Shape
+    [[0, 0], [1, 0], [-1, 0], [-1, -1], [0, 0]], //-L shape
+    [[0, 0], [0, 1], [-1, 1], [1, 0], [0, 0]], //Z
+    [[0, 0], [-1, 0], [1, 1], [0, 1], [0, 0]], //-Z
+    [[0, 0], [1, 0], [-1, 0], [0, 1], [0, 0]]
 ];
 
 //Class for the squares of the game board
@@ -57,16 +61,16 @@ class Game {
 
         $("#gameMenu").show();
         $('#gameCanvasContainer').hide();
-        $('#gameControls').hide();
+        $('#gameControlsContainer').hide();
         $('#gameEndScreen').hide();
 
         this.pageWidth = $(document).width();
         this.pageHeight = $(document).height();
         let aspectRatio = this.pageWidth / this.pageHeight;
         if (aspectRatio > 0.5) {
-            $('#gameCanvasContainer').html(`<canvas id="gameCanvas" width="${0.98 * this.pageHeight * 0.5}" height="${0.98 * this.pageHeight}" style="border:1px solid #000000;"></canvas>`);
+            $('#gameCanvasContainer').append(`<canvas id="gameCanvas" width="${0.95 * this.pageHeight * 0.5}" height="${0.95 * this.pageHeight}" style="border:1px solid #000000;"></canvas>`);
         } else {
-            $('#gameCanvasContainer').html(`<canvas id="gameCanvas" width="${0.98 * this.pageWidth}" height="${this.pageWidth * 0.98 * 2}" style="border:1px solid #000000;"></canvas>`);
+            $('#gameCanvasContainer').append(`<canvas id="gameCanvas" width="${0.95 * this.pageWidth}" height="${this.pageWidth * 0.95 * 2}" style="border:1px solid #000000;"></canvas>`);
         }
 
         this.canvas = document.getElementById("gameCanvas");
@@ -79,6 +83,7 @@ class Game {
 
         this.lastMoveTime = Date.now();
 
+        this.score = 0;
         this.screen = -1; //-1 = build pages, 0 = menu, 1 = game screen, 2 = end game screen
 
     }
@@ -106,11 +111,21 @@ class Game {
                 this.applyShape();
             }
         } else if (key == 3) {//Down
-            if (this.canMoveShape(0, 1)) {
-                this.removeShape();
-                this.shape.y++;
-                this.applyShape();
+            if (this.shape.isStuck == true) {
+                this.shape = new Shape(Math.floor(shapes.length * Math.random()), Math.floor(this.board.width / 2) - 1, 2);
+            } else {
+                if (this.canMoveShape(0, 1)) {
+                    this.removeShape();
+                    this.shape.y++;
+                    this.applyShape();
+                }
             }
+        }
+
+        if (this.canMoveShape(0, 1)) {
+            this.shape.isStuck = false;
+        } else {
+            this.shape.isStuck = true;
         }
     }
 
@@ -174,14 +189,31 @@ class Game {
     }
 
     removeRowsIfPossible() {
+        let rowsCleared = 0;
         for (let row = 0; row < this.board.height; row++) {
             if (this.rowFull(row)) {
+                rowsCleared++;
                 for (let i = row - 1; i >= 0; i--) {
                     this.moveRow(i, 1);
                 }
             }
         }
+        if(rowsCleared > 0){
+        this.score += Math.pow(8, rowsCleared);
+        $('#gameScoreBoard').html(`
+            <b>${this.score}</b>
+        `);
 
+            let data = JSON.stringify({
+                purp: "pass",
+                data: { score: this.score },
+                time: Date.now(),
+                id: conHandler.id
+            });
+            conHandler.socket.send(data);
+        }
+
+        
     }
 
     canMoveShape(x, y) {
@@ -230,7 +262,7 @@ class Game {
     }
 
     updateGameBoard() {
-        if (Date.now() - this.lastMoveTime > 500) {
+        if (Date.now() - this.lastMoveTime > 300) {
             this.lastMoveTime = Date.now();
             if (this.shape.isStuck) {
                 this.removeRowsIfPossible();
@@ -245,6 +277,7 @@ class Game {
 
                 if (this.canMoveShape(0, 1)) {
                     this.shape.y++;
+                    this.shape.isStuck = false;
                 } else {
                     this.shape.isStuck = true;
                 }
@@ -305,14 +338,14 @@ class Game {
                 {
                     let data = JSON.stringify({
                         purp: "pass",
-                        data: { updateGameState: 2 },
+                        data: { updateGameState: 2, score: this.score },
                         time: Date.now(),
                         id: conHandler.id
                     });
                     conHandler.socket.send(data);
                 }
                 $('#gameEndScreen').html(`
-                    <b>Game Over</b>
+                    <b>Game Over <br>Score: ${this.score}</b>
                 `);
                 $('#gameMenu').hide();
                 $('#gameCanvasContainer').hide();

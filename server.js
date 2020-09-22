@@ -2,6 +2,7 @@ const http = require('http');//For the http server
 const webSocketServer = require("websocket").server;
 const app = require("./app");//Controls the http routing
 const shortID = require("short-id");//Used to generate the room codes
+const { isUndefined } = require('util');
 
 
 const port = process.env.PORT || 3000;//Use port 3000 unless process.env.PORT is set as this variable is set when deployed to heroku
@@ -80,8 +81,8 @@ function addRoom(id) {
     return code;
 }
 
-function compareID(id1, id2){
-    if(id1.ip == id2.ip && id1.id == id2.id){
+function compareID(id1, id2) {
+    if (id1.ip == id2.ip && id1.id == id2.id) {
         return true;
     }
     return false;
@@ -96,9 +97,9 @@ function findRoomByCode(roomCode) {
     return -1;
 }
 
-function findRoomByPlayerID(id){
-    for(let i = 0; i < rooms.length; i++){
-        if (compareID(rooms[i].hostID, id) || compareID(rooms[i].clientID, id)){
+function findRoomByPlayerID(id) {
+    for (let i = 0; i < rooms.length; i++) {
+        if (compareID(rooms[i].hostID, id) || (rooms[i].clientID != undefined && compareID(rooms[i].clientID, id))) {
             return i;
         }
     }
@@ -114,8 +115,11 @@ function findPlayerByID(id) {
     return -1;
 }
 
-function createRoom(mess, conn){
+function setID(mess, conn) {
     conn.id = new ID(conn.remoteAddress, mess.id);
+}
+
+function createRoom(mess, conn) {
     conn.sendUTF(JSON.stringify({
         purp: "createroom",
         data: { roomCode: addRoom(conn.id) },
@@ -124,12 +128,12 @@ function createRoom(mess, conn){
     }));
 }
 
-function joinRoom(mess, conn){
+function joinRoom(mess, conn) {
     conn.id = new ID(conn.remoteAddress, mess.id);
     let roomIndex = findRoomByCode(mess.data.roomCode);
 
     if (roomIndex != -1) {
-        if(rooms[roomIndex].addPlayer(new ID(conn.remoteAddress, mess.id)) == -1){
+        if (rooms[roomIndex].addPlayer(new ID(conn.remoteAddress, mess.id)) == -1) {
             conn.sendUTF(JSON.stringify({
                 purp: "error",
                 data: { error: "room full" },
@@ -166,12 +170,12 @@ function joinRoom(mess, conn){
     }
 }
 
-function passMessage(mess, conn){
+function passMessage(mess, conn) {
     let sourcePlayerID = new ID(conn.remoteAddress, mess.id);
     let roomIndex = findRoomByPlayerID(sourcePlayerID);
     let destPlayerID = null;
     //Finding the ID of the other player in the room
-    if(roomIndex == -1){
+    if (roomIndex == -1) {
         conn.sendUTF(JSON.stringify({
             purp: "error",
             data: { error: "Could not find room" },
@@ -181,14 +185,14 @@ function passMessage(mess, conn){
         return;
     }
 
-    if(compareID(rooms[roomIndex].hostID, sourcePlayerID) == true){
+    if (compareID(rooms[roomIndex].hostID, sourcePlayerID) == true) {
         destPlayerID = rooms[roomIndex].clientID;
-    }else{
+    } else {
         destPlayerID = rooms[roomIndex].hostID;
     }
 
     let connIndex = findPlayerByID(destPlayerID);
-    if(connIndex == -1){
+    if (connIndex == -1) {
         conn.sendUTF(JSON.stringify({
             purp: "error",
             data: { error: "Could not find other player" },
@@ -205,18 +209,44 @@ function passMessage(mess, conn){
     }));
 }
 
+function destroyRoom(mess, conn) {
+    let playerID = new ID(conn.remoteAddress, mess.id);
+    console.log(playerID);
+    let roomIndex = findRoomByPlayerID(playerID);
+    if (roomIndex != -1) {
+        rooms.splice(roomIndex, 1);
+    }
+}
+
+function removePlayer(id) {
+    let roomIndex = findRoomByPlayerID(id);
+    if (roomIndex != -1) {
+        rooms.splice(roomIndex, 1);
+    }
+
+    let playerIndex = findPlayerByID(id);
+
+    if (playerIndex != -1) {
+        connections.splice(playerIndex, 1);
+    }
+}
+
 function handleMessage(mess, conn) {
     mess = JSON.parse(mess);
-    if (mess.purp == "createroom") {
+    if (mess.purp == "setid") {
+        setID(mess, conn);
+    } else if (mess.purp == "createroom") {
         createRoom(mess, conn);
     } else if (mess.purp == "joinroom") {
         joinRoom(mess, conn);
-    }else if(mess.purp == "pass"){
+    } else if (mess.purp == "pass") {
         passMessage(mess, conn);
+    } else if (mess.purp == "destroyroom") {
+        destroyRoom(mess, conn);
     } else {
         conn.sendUTF(JSON.stringify({
             purp: "error",
-            data: {error: "Purpose not recognise"},
+            data: { error: "Purpose not recognise" },
             time: Date.now(),
             id: mess.id
         }));
@@ -248,6 +278,7 @@ wss.on('request', function (request) {
         handleMessage(message.utf8Data, connection);
     });
     connection.on('close', function (reasonCode, description) {
+        removePlayer(connection.id);
         console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
     });
 
