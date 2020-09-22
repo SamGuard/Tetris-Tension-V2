@@ -10,6 +10,14 @@ shapes = [
     [[0, 0], [1, 0], [-1, 0], [0, 1], [0, 0]]
 ];
 
+shapeColours = [
+    "#F1C311",
+    "#E64C3C",
+    "#2DCC6F",
+    "#3597DA",
+    "#9676A7"
+];
+
 //Class for the squares of the game board
 class Cell {
     constructor(col) {
@@ -32,6 +40,7 @@ class Shape {
         this.x = x;
         this.y = y;
         this.isStuck = false;
+        this.col = shapeColours[Math.floor(Math.random() * shapeColours.length)];
     }
 
 
@@ -86,6 +95,8 @@ class Game {
         this.score = 0;
         this.screen = -1; //-1 = build pages, 0 = menu, 1 = game screen, 2 = end game screen
 
+        this.key = [0, 0, 0, 0];
+
     }
 
     handleMess(mess) {
@@ -96,36 +107,8 @@ class Game {
 
     //Carrys out actions based on the keys pressed
     keyPressed(key) {
-        if (key == 0) {//Up
-            this.rotate(1);
-        } else if (key == 1) {//Left
-            if (this.canMoveShape(-1, 0)) {
-                this.removeShape();
-                this.shape.x--;
-                this.applyShape();
-            }
-        } else if (key == 2) {//Right
-            if (this.canMoveShape(1, 0)) {
-                this.removeShape();
-                this.shape.x++;
-                this.applyShape();
-            }
-        } else if (key == 3) {//Down
-            if (this.shape.isStuck == true) {
-                this.shape = new Shape(Math.floor(shapes.length * Math.random()), Math.floor(this.board.width / 2) - 1, 2);
-            } else {
-                if (this.canMoveShape(0, 1)) {
-                    this.removeShape();
-                    this.shape.y++;
-                    this.applyShape();
-                }
-            }
-        }
-
-        if (this.canMoveShape(0, 1)) {
-            this.shape.isStuck = false;
-        } else {
-            this.shape.isStuck = true;
+        if(key >= 0 && key < 5){
+            this.key[key] = 1;
         }
     }
 
@@ -167,6 +150,7 @@ class Game {
                 this.shape.cells[i][0] = newX + this.shape.anchorX;
                 this.shape.cells[i][1] = newY + this.shape.anchorY;
             }
+            this.applyShape();
         }
 
     }
@@ -184,6 +168,7 @@ class Game {
     moveRow(row, dist) {
         for (let i = 0; i < this.board.width; i++) {
             this.board.board[i][row + dist].filled = this.board.board[i][row].filled;
+            this.board.board[i][row + dist].col = this.board.board[i][row].col;
             this.board.board[i][row].filled = false;
         }
     }
@@ -257,6 +242,7 @@ class Game {
         this.shape.cells.forEach(c => {
             if (c[0] + this.shape.x >= 0 && c[0] + this.shape.x < this.board.width && c[1] + this.shape.y >= 0 && c[1] + this.shape.y < this.board.height) {
                 this.board.board[c[0] + this.shape.x][c[1] + this.shape.y].filled = true;
+                this.board.board[c[0] + this.shape.x][c[1] + this.shape.y].col = this.shape.col;
             }
         });
     }
@@ -354,12 +340,54 @@ class Game {
         }
     }
 
+    updateInput() {
+        if (this.key[0] == 1) {//Up
+            this.rotate(1);
+        }
+        if (this.key[1] == 1) {//Left
+            if (this.canMoveShape(-1, 0)) {
+                this.removeShape();
+                this.shape.x--;
+                this.applyShape();
+            }
+        }
+        if (this.key[2] == 1) {//Right
+            if (this.canMoveShape(1, 0)) {
+                this.removeShape();
+                this.shape.x++;
+                this.applyShape();
+            }
+        }
+        if (this.key[3] == 1) {//Down
+            if (this.shape.isStuck == true) {
+                this.shape = new Shape(Math.floor(shapes.length * Math.random()), Math.floor(this.board.width / 2) - 1, 2);
+            } else {
+                if (this.canMoveShape(0, 1)) {
+                    this.removeShape();
+                    this.shape.y++;
+                    this.applyShape();
+                }
+            }
+        }
+
+        if (this.canMoveShape(0, 1)) {
+            this.shape.isStuck = false;
+        } else {
+            this.shape.isStuck = true;
+        }
+
+        for(let i = 0; i < 4; i++){
+            this.key[i] = 0;
+        }
+    }
+
     update() {
         if (this.screen == -1) {
             this.switchScreen(0);
         } else if (this.screen == 0) {
 
         } else if (this.screen == 1) {
+            this.updateInput();
             this.updateGameBoard();
             this.drawBoard();
         } else if (this.screen == 2) {

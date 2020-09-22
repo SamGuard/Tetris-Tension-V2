@@ -78,7 +78,7 @@ class ConnectionHandler {
             this.game = new Game(this.isHost, this.socket);
             gameUpdateInterval = setInterval(function () {
                 conHandler.game.update();
-            }, 100);
+            }, 16);
         } else {
             this.game = new GameController();
         }
