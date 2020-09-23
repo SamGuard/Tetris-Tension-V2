@@ -4,7 +4,7 @@ shapes = [
     [[0, 0], [0, 1], [0, -1], [0, 2], [0, 0.5]], //Line
     [[0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0.5]], //Box
     [[0, 0], [-1, 0], [1, 0], [1, 1], [0, 0]], //L Shape
-    [[0, 0], [1, 0], [-1, 0], [-1, -1], [0, 0]], //-L shape
+    [[0, 0], [1, 0], [-1, 0], [-1, 1], [0, 0]], //-L shape
     [[0, 0], [0, 1], [-1, 1], [1, 0], [0, 0]], //Z
     [[0, 0], [-1, 0], [1, 1], [0, 1], [0, 0]], //-Z
     [[0, 0], [1, 0], [-1, 0], [0, 1], [0, 0]] //T
@@ -250,7 +250,7 @@ class Game {
     }
 
     updateGameBoard() {
-        if (Date.now() - this.lastMoveTime > 600) {
+        if (Date.now() - this.lastMoveTime > 500) {
             this.lastMoveTime = Date.now();
             if (this.shape.isStuck) {
                 this.removeRowsIfPossible();
