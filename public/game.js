@@ -77,9 +77,9 @@ class Game {
         this.pageHeight = $(document).height();
         let aspectRatio = this.pageWidth / this.pageHeight;
         if (aspectRatio > 0.5) {
-            $('#gameCanvasContainer').append(`<canvas id="gameCanvas" width="${0.95 * this.pageHeight * 0.5}" height="${0.95 * this.pageHeight}" style="border:1px solid #000000;"></canvas>`);
+            $('#gameCanvasContainer').append(`<canvas id="gameCanvas" width="${0.75 * this.pageHeight * 0.5}" height="${0.75 * this.pageHeight}" style="border:1px solid #000000;"></canvas>`);
         } else {
-            $('#gameCanvasContainer').append(`<canvas id="gameCanvas" width="${0.95 * this.pageWidth}" height="${this.pageWidth * 0.95 * 2}" style="border:1px solid #000000;"></canvas>`);
+            $('#gameCanvasContainer').append(`<canvas id="gameCanvas" width="${0.75 * this.pageWidth}" height="${this.pageWidth * 0.75 * 2}" style="border:1px solid #000000;"></canvas>`);
         }
 
         this.canvas = document.getElementById("gameCanvas");
@@ -275,7 +275,7 @@ class Game {
 
     drawBoard() {
         this.ctx.clearRect(0, 0, this.canWidth, this.canHeight);
-        this.ctx.strokeStyle = "#000000";
+        this.ctx.strokeStyle = "#D0DADC";
         let cellWidth = this.canWidth / this.board.width;
         let cellHeight = this.canHeight / this.board.height;
         for (let x = 0; x < this.board.width; x++) {
@@ -283,7 +283,7 @@ class Game {
                 if (this.board.board[x][y].filled == true) {
                     this.ctx.fillStyle = this.board.board[x][y].col;
                 } else {
-                    this.ctx.fillStyle = "#999999";
+                    this.ctx.fillStyle = "#ECF0F1";
                 }
                 this.ctx.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
                 this.ctx.strokeRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
@@ -296,7 +296,7 @@ class Game {
         switch (s) {
             case 0:
                 $('#gameReadyButton').html(`
-                    <b>Ready?</b>
+                <button class="btn draw-border" type="button">Ready</button>
                 `);
                 $('#gameReadyButton').click(function () {
                     conHandler.game.switchScreen(1);

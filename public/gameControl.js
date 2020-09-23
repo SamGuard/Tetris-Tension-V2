@@ -2,7 +2,7 @@ class GameController{
     constructor(){
         this.score = 0;
         $('#gameReadyButton').html(`
-            <b>Waiting for player to start</b>
+            <b class="subtitle">Waiting for other player to start</b>
         `);
         $('#gameMenu').show();
         $('#gameControlsContainer').hide();

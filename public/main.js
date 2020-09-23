@@ -8,7 +8,6 @@ function makeid(length) {
     return result;
 }
 
-
 class ConnectionHandler {
     constructor() {
         this.isHost = false;
@@ -27,7 +26,6 @@ class ConnectionHandler {
         } else {
             this.IP = "ws://" + window.location.host;
         }
-
         this.socket = new WebSocket(this.IP);
         
     }
@@ -157,7 +155,7 @@ $(document).ready(function () {
     $('#createGamePage').hide();
 
     $('#joinGameButton').click(function () {
-        conHandler.roomCode = $('#codeInput').val();
+        conHandler.roomCode = $('#codeInput').val().toLowerCase();
         conHandler.joinRoom();
     });
 

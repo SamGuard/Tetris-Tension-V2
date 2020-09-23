@@ -1,7 +1,7 @@
 {
-  "name": "tetris-tention-v2",
+  "name": "tetris-tension-v2",
   "version": "1.0.0",
-  "description": "Tetris-Tention-V2",
+  "description": "Tetris-tension-V2",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
