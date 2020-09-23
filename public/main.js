@@ -70,7 +70,6 @@ class ConnectionHandler {
         $('#gamePage').show();
         this.gameRunning = true;
 
-
         console.log("Game running, isHost: " + this.isHost);
         if (this.isHost) {
             this.game = new Game(this.isHost, this.socket);
@@ -88,6 +87,8 @@ class ConnectionHandler {
 
 let conHandler = new ConnectionHandler();
 let gameUpdateInterval = null;
+let audio = new Audio();
+
 conHandler.socket.onopen = function (e) {
     let data = JSON.stringify({
         purp: "setid",

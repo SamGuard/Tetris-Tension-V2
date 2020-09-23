@@ -309,6 +309,32 @@ class Game {
                 break;
             case 1:
                 {
+
+                    var i = 0;
+                    var songs = ["1.mp3", "2.mp3", "3.mp3", "4.mp3", "5.mp3"];
+            
+                    /*
+                    mii channel: 1
+                    lifelight: 2
+                    wii shop: 3
+                    boss battle: 4
+                    Coconut mall: 5
+            
+                    */
+                    audio.addEventListener('ended', function() {
+                        if (i >= songs.length-1) {
+                            i = 0;
+                        }
+                        else {
+                            i++;
+                        }
+                        audio.src = songs[i];
+                        audio.play();
+                    })
+                    audio.loop = false;
+                    audio.src = songs[0];
+                    audio.play();
+                    
                     let data = JSON.stringify({
                         purp: "pass",
                         data: { updateGameState: 1 },
