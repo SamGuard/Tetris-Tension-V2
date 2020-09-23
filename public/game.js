@@ -250,7 +250,7 @@ class Game {
     }
 
     updateGameBoard() {
-        if (Date.now() - this.lastMoveTime > 150) {
+        if (Date.now() - this.lastMoveTime > 600) {
             this.lastMoveTime = Date.now();
             if (this.shape.isStuck) {
                 this.removeRowsIfPossible();
