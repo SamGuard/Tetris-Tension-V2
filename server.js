@@ -67,7 +67,7 @@ class Room {
 rooms = [];
 
 function genCode() {
-    return shortID.generate();
+    return shortID.generate().toLowerCase();
 }
 
 function isOriginAllowed(ip) {

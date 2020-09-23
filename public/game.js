@@ -7,14 +7,16 @@ shapes = [
     [[0, 0], [1, 0], [-1, 0], [-1, -1], [0, 0]], //-L shape
     [[0, 0], [0, 1], [-1, 1], [1, 0], [0, 0]], //Z
     [[0, 0], [-1, 0], [1, 1], [0, 1], [0, 0]], //-Z
-    [[0, 0], [1, 0], [-1, 0], [0, 1], [0, 0]]
+    [[0, 0], [1, 0], [-1, 0], [0, 1], [0, 0]] //T
 ];
 
 shapeColours = [
     "#F1C311",
     "#E64C3C",
     "#2DCC6F",
+    "#C4ABBC",
     "#3597DA",
+    "#87F1FF",
     "#9676A7"
 ];
 
@@ -40,7 +42,7 @@ class Shape {
         this.x = x;
         this.y = y;
         this.isStuck = false;
-        this.col = shapeColours[Math.floor(Math.random() * shapeColours.length)];
+        this.col = shapeColours[shapeNum];
     }
 
 
@@ -360,6 +362,7 @@ class Game {
         }
         if (this.key[3] == 1) {//Down
             if (this.shape.isStuck == true) {
+                this.removeRowsIfPossible();
                 this.shape = new Shape(Math.floor(shapes.length * Math.random()), Math.floor(this.board.width / 2) - 1, 2);
             } else {
                 if (this.canMoveShape(0, 1)) {
