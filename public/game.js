@@ -312,7 +312,10 @@ class Game {
 
                     var i = 0;
                     var songs = ["1.mp3", "2.mp3", "3.mp3", "4.mp3", "5.mp3"];
-            
+            songs = songs
+  .map((a) => ({sort: Math.random(), value: a}))
+  .sort((a, b) => a.sort - b.sort)
+  .map((a) => a.value);
                     /*
                     mii channel: 1
                     lifelight: 2
