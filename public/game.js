@@ -332,6 +332,7 @@ class Game {
                             i++;
                         }
                         audio.src = songs[i];
+audio.volume = 0.3;
                         audio.play();
                     })
                     audio.loop = false;
